@@ -40,8 +40,8 @@ class DestinyAPI:
 		usernames = [entry["player"]["destinyUserInfo"]["displayName"] for entry in players]
 		return usernames
 
-	def getRecentPlayerMap(self, membershipID, characterId):
-		activityIds = self.getCharacterActivity(membershipID, characterId, 'Raid')
+	def getRecentPlayerMap(self, membershipID, characterId, mode='None'):
+		activityIds = self.getCharacterActivity(membershipID, characterId, mode)
 		pool = ThreadPool(16)
 		results = pool.map(self.getPlayersInActivity, activityIds)
 		pool.close()
@@ -55,11 +55,11 @@ class DestinyAPI:
 	def getRaidMembers(self, username):
 		memId = self.getMembershipId(username)
 		charIds = self.getCharacterIds(memId)
-		recentPlayers = self.getRecentPlayerMap(memId, charIds[0])
+		recentPlayers = self.getRecentPlayerMap(memId, charIds[0], 'Raid')
 		result = []
 		for key, value in recentPlayers.iteritems():
 			if key != username:
-				result.append((key, value))
+				result.append((str(key), value))
 		return sorted(result, key=lambda x: x[1], reverse=True)
 
 
