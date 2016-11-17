@@ -1,5 +1,6 @@
 import requests
 import json
+import pprint
 from multiprocessing.pool import ThreadPool
 from collections import defaultdict
 
@@ -15,6 +16,28 @@ class DestinyAPI:
 		r = requests.get(url, headers=self.headers)
 		result = json.loads(r.content)
 		return result["Response"][0]["membershipId"]
+
+	def getBungieAccount(self, membershipId):
+		url = 'https://www.bungie.net/Platform/User/GetBungieAccount/' + membershipId + '/2/'
+		r = requests.get(url, headers=self.headers)
+		result = json.loads(r.content)
+		return result["Response"]
+
+	def getClanInfo(self, groupId):
+		url = 'https://www.bungie.net/Platform/Group/' + groupId
+		r = requests.get(url, headers=self.headers)
+		result = json.loads(r.content)
+		return result["Response"]
+
+	def getClansForUser(self, username):
+		memId = self.getMembershipId(username)
+		account = self.getBungieAccount(memId)
+		clanIds = [clan["groupId"] for clan in account["clans"]]
+		clanNames = []
+		for clanId in clanIds:
+			clanInfo = self.getClanInfo(clanId)
+			clanNames.append(self.getClanInfo(clanId)["detail"]["name"])
+		return clanNames
 
 	def getCharacterIds(self, membershipId):
 		url = self.apiBase + '2/Account/' + membershipId
@@ -71,5 +94,10 @@ def test_basic():
 	# print api.getPlayersInActivity(activityIds[0])
 	print api.getRecentPlayerMap(memId, charIds[0])
 
-api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
-print api.getRaidMembers('neoleopard')
+def test_2():
+	api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
+	print api.getClansForUser('neoleopard')
+
+# api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
+# print api.getRaidMembers('neoleopard')
+test_2()
