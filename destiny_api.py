@@ -18,7 +18,7 @@ class DestinyAPI:
 		result = json.loads(r.content)
 		return result["Response"][0]["membershipId"]
 		
-    def getBungieAccount(self, membershipId):
+	def getBungieAccount(self, membershipId):
 		url = 'https://www.bungie.net/Platform/User/GetBungieAccount/' + membershipId + '/2/'
 		r = requests.get(url, headers=self.headers)
 		result = json.loads(r.content)
@@ -82,7 +82,7 @@ class DestinyAPI:
 				mapping[player] += 1
 		return mapping
 		
-    #grequests multithreading requests version
+	#grequests multithreading requests version
 	def getRecentPlayerMap2(self, membershipID, characterId, mode='None'):
 		activityIds = self.getCharacterActivity(membershipID, characterId, mode)
 		activityIds = activityIds[:min(10,len(activityIds))] #limit to 10 most recent activities
@@ -115,7 +115,7 @@ class DestinyAPI:
 				result.append((str(key), value))
 		return sorted(result, key=lambda x: x[1], reverse=True)
 
-    #generic version
+	#generic version
 	def getActivityMembers(self, username, mode):
 		memId = self.getMembershipId(username)
 		charIds = self.getCharacterIds(memId)
