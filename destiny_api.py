@@ -1,6 +1,8 @@
 import requests
+import grequests
 import json
 from multiprocessing.pool import ThreadPool
+#from pathos.multiprocessing import ProcessPool
 from collections import defaultdict
 
 class DestinyAPI:
@@ -28,6 +30,11 @@ class DestinyAPI:
 		url = self.apiBase + 'Stats/ActivityHistory/2/' + membershipId + '/' + characterId + '/?mode=' + mode
 		r = requests.get(url, headers=self.headers)
 		result = json.loads(r.content)
+		if "activities" not in result["Response"]["data"]:
+		    print "Could not find activities"
+		    print result["Response"]
+		    print result["Response"]["data"]
+		    return []
 		activities = result["Response"]["data"]["activities"]
 		activityIds = [activity["activityDetails"]["instanceId"] for activity in activities]
 		return activityIds
@@ -39,10 +46,12 @@ class DestinyAPI:
 		players = result["Response"]["data"]["entries"]
 		usernames = [entry["player"]["destinyUserInfo"]["displayName"] for entry in players]
 		return usernames
+		
 
 	def getRecentPlayerMap(self, membershipID, characterId, mode='None'):
 		activityIds = self.getCharacterActivity(membershipID, characterId, mode)
 		pool = ThreadPool(16)
+		#pool = ProcessPool(8)
 		results = pool.map(self.getPlayersInActivity, activityIds)
 		pool.close()
 		pool.join()
@@ -51,7 +60,30 @@ class DestinyAPI:
 			for player in result:
 				mapping[player] += 1
 		return mapping
-
+		
+    #grequests multithreading requests version
+	def getRecentPlayerMap2(self, membershipID, characterId, mode='None'):
+		activityIds = self.getCharacterActivity(membershipID, characterId, mode)
+		activityIds = activityIds[:min(10,len(activityIds))] #limit to 10 most recent activities
+		urlHeads = [(self.apiBase + 'Stats/PostGameCarnageReport/' + activityId, self.headers) for activityId in activityIds]
+		print "mapping"
+		rqs = [grequests.get(urlHead[0], headers=urlHead[1]) for urlHead in urlHeads]
+		rs = grequests.imap(rqs) #imap returns iterator, runs faster
+		results = []
+		print "processing returned info"
+		for r in rs:
+			result = json.loads(r.content)
+			players = result["Response"]["data"]["entries"]
+			usernames = [entry["player"]["destinyUserInfo"]["displayName"] for entry in players]
+			results.append(usernames)
+		
+		#count players
+		mapping = defaultdict(int)
+		for result in results:
+			for player in result:
+				mapping[player] += 1
+		return mapping
+		
 	def getRaidMembers(self, username):
 		memId = self.getMembershipId(username)
 		charIds = self.getCharacterIds(memId)
@@ -62,6 +94,17 @@ class DestinyAPI:
 				result.append((str(key), value))
 		return sorted(result, key=lambda x: x[1], reverse=True)
 
+    #generic version
+	def getActivityMembers(self, username, mode):
+		memId = self.getMembershipId(username)
+		charIds = self.getCharacterIds(memId)
+		recentPlayers = self.getRecentPlayerMap2(memId, charIds[0], mode)
+		result = []
+		for key, value in recentPlayers.iteritems():
+			if key != username:
+				result.append((str(key), value))
+		return sorted(result, key=lambda x: x[1], reverse=True)
+		
 
 def test_basic():
 	api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
@@ -71,5 +114,5 @@ def test_basic():
 	# print api.getPlayersInActivity(activityIds[0])
 	print api.getRecentPlayerMap(memId, charIds[0])
 
-api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
-print api.getRaidMembers('neoleopard')
+#api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
+#print api.getRaidMembers('neoleopard')
