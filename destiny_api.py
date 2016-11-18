@@ -1,8 +1,6 @@
 import requests
-import grequests
 import json
 from multiprocessing.pool import ThreadPool
-#from pathos.multiprocessing import ProcessPool
 from collections import defaultdict
 
 class DestinyAPI:
@@ -30,11 +28,6 @@ class DestinyAPI:
 		url = self.apiBase + 'Stats/ActivityHistory/2/' + membershipId + '/' + characterId + '/?mode=' + mode
 		r = requests.get(url, headers=self.headers)
 		result = json.loads(r.content)
-		if "activities" not in result["Response"]["data"]:
-		    print "Could not find activities"
-		    print result["Response"]
-		    print result["Response"]["data"]
-		    return []
 		activities = result["Response"]["data"]["activities"]
 		activityIds = [activity["activityDetails"]["instanceId"] for activity in activities]
 		return activityIds
@@ -46,12 +39,10 @@ class DestinyAPI:
 		players = result["Response"]["data"]["entries"]
 		usernames = [entry["player"]["destinyUserInfo"]["displayName"] for entry in players]
 		return usernames
-		
 
 	def getRecentPlayerMap(self, membershipID, characterId, mode='None'):
 		activityIds = self.getCharacterActivity(membershipID, characterId, mode)
 		pool = ThreadPool(16)
-		#pool = ProcessPool(8)
 		results = pool.map(self.getPlayersInActivity, activityIds)
 		pool.close()
 		pool.join()
@@ -61,7 +52,7 @@ class DestinyAPI:
 				mapping[player] += 1
 		return mapping
 		
-    #grequests multithreading requests version
+    	#grequests multithreading requests version
 	def getRecentPlayerMap2(self, membershipID, characterId, mode='None'):
 		activityIds = self.getCharacterActivity(membershipID, characterId, mode)
 		activityIds = activityIds[:min(10,len(activityIds))] #limit to 10 most recent activities
@@ -114,5 +105,10 @@ def test_basic():
 	# print api.getPlayersInActivity(activityIds[0])
 	print api.getRecentPlayerMap(memId, charIds[0])
 
-#api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
-#print api.getRaidMembers('neoleopard')
+def test_2():
+	api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
+	print api.getClansForUser('neoleopard')
+
+# api = DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
+# print api.getRaidMembers('neoleopard')
+# test_2()
