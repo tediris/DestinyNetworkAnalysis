@@ -1,6 +1,8 @@
 import requests
 import json
+import pprint
 from multiprocessing.pool import ThreadPool
+#from pathos.multiprocessing import ProcessPool
 from collections import defaultdict
 
 class DestinyAPI:
@@ -15,7 +17,29 @@ class DestinyAPI:
 		r = requests.get(url, headers=self.headers)
 		result = json.loads(r.content)
 		return result["Response"][0]["membershipId"]
-
+		
+    def getBungieAccount(self, membershipId):
+		url = 'https://www.bungie.net/Platform/User/GetBungieAccount/' + membershipId + '/2/'
+		r = requests.get(url, headers=self.headers)
+		result = json.loads(r.content)
+		return result["Response"]
+		
+	def getClanInfo(self, groupId):
+		url = 'https://www.bungie.net/Platform/Group/' + groupId
+		r = requests.get(url, headers=self.headers)
+		result = json.loads(r.content)
+		return result["Response"]
+		
+	def getClansForUser(self, username):
+		memId = self.getMembershipId(username)
+		account = self.getBungieAccount(memId)
+		clanIds = [clan["groupId"] for clan in account["clans"]]
+		clanNames = []
+		for clanId in clanIds:
+			clanInfo = self.getClanInfo(clanId)
+			clanNames.append(self.getClanInfo(clanId)["detail"]["name"])
+		return clanNames
+		
 	def getCharacterIds(self, membershipId):
 		url = self.apiBase + '2/Account/' + membershipId
 		r = requests.get(url, headers=self.headers)
@@ -28,6 +52,11 @@ class DestinyAPI:
 		url = self.apiBase + 'Stats/ActivityHistory/2/' + membershipId + '/' + characterId + '/?mode=' + mode
 		r = requests.get(url, headers=self.headers)
 		result = json.loads(r.content)
+		if "activities" not in result["Response"]["data"]:
+		    print "Could not find activities"
+		    print result["Response"]
+		    print result["Response"]["data"]
+		    return []
 		activities = result["Response"]["data"]["activities"]
 		activityIds = [activity["activityDetails"]["instanceId"] for activity in activities]
 		return activityIds
@@ -43,6 +72,7 @@ class DestinyAPI:
 	def getRecentPlayerMap(self, membershipID, characterId, mode='None'):
 		activityIds = self.getCharacterActivity(membershipID, characterId, mode)
 		pool = ThreadPool(16)
+		#pool = ProcessPool(8)
 		results = pool.map(self.getPlayersInActivity, activityIds)
 		pool.close()
 		pool.join()
@@ -52,7 +82,7 @@ class DestinyAPI:
 				mapping[player] += 1
 		return mapping
 		
-    	#grequests multithreading requests version
+    #grequests multithreading requests version
 	def getRecentPlayerMap2(self, membershipID, characterId, mode='None'):
 		activityIds = self.getCharacterActivity(membershipID, characterId, mode)
 		activityIds = activityIds[:min(10,len(activityIds))] #limit to 10 most recent activities
