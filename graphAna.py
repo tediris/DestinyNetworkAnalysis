@@ -2,13 +2,15 @@ import snap
 import numpy as np
 import dill
 
+mode = 'TrialsOfOsiris'
+
 #load graph and name-to-node/node-to-name mapping dicts
-FIn = snap.TFIn("raidgraph.graph")
+FIn = snap.TFIn(mode+"Graph.graph")
 graph = snap.TUNGraph.Load(FIn)
-nodeMapping, nameMapping = dill.load(open('mappings.pkl', 'r'))
+nodeMapping, nameMapping = dill.load(open(mode+"mappings.pkl", 'r'))
 
 #basic info
-snap.PrintInfo(graph, "raid graph")
+snap.PrintInfo(graph, mode + " graph")
 edgeBridges = snap.TIntPrV()
 snap.GetEdgeBridges(graph, edgeBridges)
 print "Number of edge bridges is %d" %len(edgeBridges)

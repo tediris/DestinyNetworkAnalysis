@@ -73,5 +73,5 @@ def buildGraph(mode):
     snap.DrawGViz(graph, snap.gvlNeato, mode + "graph.png", mode + "graph", True)
     
     
-buildGraph('TrialsOfOsiris')
+buildGraph('Nightfall')
 
