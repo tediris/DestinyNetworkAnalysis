@@ -1,4 +1,5 @@
-import destiny_api as da
+#import destiny_api as da
+import threaded_destiny_api as da
 import snap
 import numpy as np
 import dill
@@ -9,7 +10,6 @@ nodeMapping = {origin:0} #names to nodeIds
 nameMapping = {0:origin} #nodeIds to names
 nextNodeNum = 1 #origin player is 0
 
-
 def crawl(graph, player, searched, depth, mode):
     global nodeMapping
     global nameMapping
@@ -17,8 +17,9 @@ def crawl(graph, player, searched, depth, mode):
     if depth==0:
         return
         
-    api = da.DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
-    activityMembers = api.getActivityMembers(player, mode)
+    #api = da.DestinyAPI('f6736009a38a4707b549422b1bd69ea4')
+    #activityMembers = api.getActivityMembers(player, mode)
+    activityMembers = da.getActivityMembers(player, mode, 25, 25)
     searched.add(player) #mark player as visited
     
     #add to graph
@@ -67,11 +68,11 @@ def buildGraph(mode):
     graph.Save(FOut)
     FOut.Flush()
     #save dicts
-    with open(mode + "mappings.pkl", 'w') as f:
+    with open(mode + "Mappings.pkl", 'w') as f:
         dill.dump((nodeMapping, nameMapping), f)
     #attempt to draw graph
-    snap.DrawGViz(graph, snap.gvlNeato, mode + "graph.png", mode + "graph", True)
+    snap.DrawGViz(graph, snap.gvlNeato, mode + "Graph.png", mode + " Graph", True)
     
     
-buildGraph('Nightfall')
+buildGraph('Raid')
 
